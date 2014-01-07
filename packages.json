@@ -1,0 +1,8 @@
+{
+	"base" : ["zsh", "debconfig", "sudo", "unzip", "screen", "openssh-server"],
+	"dev" : ["gcc", "g++", "make", "cmake", "autoconf", "perl", "python", "ipython", "gdb"],
+	"version" : ["git", "git-core", "mercurial"],
+	"network" : ["ufw", "fail2ban", "nmap"]
+	"web" : ["apache2", "mysql-server", "php5", "php5-mysql", "libapache2-mod-php5"],
+	"editors" : ["emacs", "vim"],
+}
