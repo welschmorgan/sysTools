@@ -1,5 +1,5 @@
 {
-	"base" : ["zsh", "debconfig", "sudo", "unzip", "screen", "openssh-server"],
+	"base" : ["zsh", "debconfig", "sudo", "unzip", "screen", "openssh-server", "ftp"],
 	"dev" : ["gcc", "g++", "make", "cmake", "autoconf", "perl", "python", "ipython", "gdb"],
 	"version" : ["git", "git-core", "mercurial"],
 	"network" : ["ufw", "fail2ban", "nmap"],
