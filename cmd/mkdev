@@ -1,0 +1,185 @@
+#!/usr/bin/python3
+import sys, os, subprocess, getopt, glob
+
+####################
+# SysVars
+##
+argv = sys.argv
+home_dir = os.getenv("HOME")
+help_requested = False
+base_dir = home_dir + '/dev'
+target_name = ""
+target_dir = ""
+####################
+# Tool Configuration
+##
+tool_stage = "b"
+tool_stage_long = "Beta"
+tool_version = "0.1 %s" % tool_stage_long
+tool_author = "DarkBoss"
+tool_name = "mkdev"
+tool_verbose = 0
+
+####################
+# Errors
+##
+ERR_NONE = 0
+ERR_GENERIC = 1
+ERR_INVALID_PATH = ERR_GENERIC + 1
+ERR_INVALID_NAME = ERR_GENERIC + 2
+ERR_DIR_EXISTS = ERR_GENERIC + 3
+
+#######################
+# Translate Error Codes
+##
+def tr_error(code):
+	if code == ERR_NONE:
+		return "Success"
+	elif code == ERR_INVALID_PATH:
+		return "Invalid parent directory"
+	elif code == ERR_INVALID_NAME:
+		return "Invalid project name"
+	elif code == ERR_DIR_EXISTS:
+		return "Directory exists"
+	elif code == ERR_GENERIC:
+		return "Generic error"
+	return "Unknown"
+
+def config_file(home):
+	global tool_name
+	return home + '/.sysTools_' + tool_name
+
+def load_config(home):
+	global base_dir
+	print ("Loading config file %s" % config_file(home))
+	f = open(config_file(home), 'r')
+	while (True):
+		line = f.readline()
+		if not line:
+			break
+		arr = line.split("=")
+		if arr[0] == "dev_dir":
+		   base_dir = arr[1]
+	f.close()
+
+def save_config(home):
+	print ("Saving config file %s" % config_file(home))
+	f = open(config_file(home), 'w')
+	f.write("dev_dir=%s" % base_dir)
+	f.close()
+
+####################
+# Exits the program with
+# a special error code
+# and a message
+##
+def die(code=1, msg=""):
+	if code != 0:
+		if msg == "":
+			print ("error[%s]: %s" % (tr_error(code), msg))
+		else:
+			print ("error[%s]: %s" % (tr_error(code), msg))
+	sys.exit(code)
+
+####################
+# Tool usage
+##
+def usage():
+	print("Usage:");
+	print("\t%s: %s" % ("[-h|--help]",
+			    "prints help screen and exits"));
+	print("\t%s: %s" % ("[-[v|-version]]",
+			    "prints tool version and exits"));
+	print("\t%s: %s" % ("[-[V|-Verbose]",
+			    "enables verbose output"));
+	print("\t%s: %s" % ("[-[n|-name] PROJECT_NAME]",
+			    "sets the project name"));
+	print("\t%s: %s" % ("[-[p|path|parent-dir] PARENT_DIR]",
+			    "sets the base path to use"));
+	sys.exit(ERR_NONE)
+
+####################
+# Creates dev dir
+##
+
+def create_dir():
+	global target_name
+	global target_dir
+	global base_dir
+	global input
+
+	try: input = raw_input
+	except NameError: pass
+
+	if target_name == "":
+		target_name = input("Project name: ")
+		if target_name == "":
+			die(ERR_INVALID_NAME,
+			    "You must specify a valid project name")
+	if target_dir == "":
+		base = base_dir + '/' + target_name
+	else:
+		base = target_dir + '/' + target_name
+	print("Creating dev directory : %s" % base)
+	if base_dir is None:
+		die(ERR_INVALID_PATH, "You must specify a valid path")
+	elif target_name is None:
+		die(ERR_INVALID_NAME,"You must specify a valid project name")
+	elif os.path.exists(base):
+		die(ERR_DIR_EXISTS,"%s: Directory exists in '%s'" % \
+			    (target_name, base))
+	else:
+		subprocess.call(["mkdir", "-p", base])
+		subprocess.call(["mkdir", "-p", base + '/src'])
+		subprocess.call(["mkdir", "-p", base + '/inc'])
+		subprocess.call(["mkdir", "-p", base + '/obj'])
+
+def get_version():
+	if tool_verbose == 0:
+		print ("%s" % (tool_version))
+	else:
+		print ("Verbose: %s" % (tool_version))
+
+def get_author():
+	print ("Author: %s" % tool_author)
+
+def get_name():
+	print ("Tool: %s" % tool_name)
+
+if len(argv) < 2:
+	usage()
+
+try:
+	load_config(home_dir);
+except IOError:
+	print("Couldnt load config %s" % config_file(home_dir))
+	pass
+
+save_config(home_dir);
+
+try:
+	optspec = ["help", "version", "name", "parent-dir", "verbose"]
+	global_args, cmd = getopt.getopt(argv[1:], "hvnpV", optspec)
+except getopt.GetoptError as ex:
+	die(ERR_GENERIC, ex.msg)
+
+for opt in global_args:
+	if opt[0] in ['-h', '--help']:
+		usage()
+	elif opt[0] in ['-v', '--version']:
+		get_version()
+		die(ERR_NONE);
+	elif opt[0] in ['-V', '--verbose']:
+		tool_verbose = 1
+	elif opt[0] in ['-n', '--name']:
+		target_name = opt[1]
+	elif opt[0] in ['-p', '--parent-dir', '--path']:
+		target_dir = opt[1]
+	else:
+		usage('error: unexpected option "%s"' % opt[0])
+if tool_verbose == 1:
+	get_name()
+	get_author()
+	print ("Devel. dir: %s" % target_name)
+create_dir()
+sys.exit(ERR_NONE);
